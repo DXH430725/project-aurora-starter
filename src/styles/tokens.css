@@ -1,0 +1,42 @@
+/*
+ * Aurora Design Tokens — single source of truth for theme CSS variables.
+ * All HSL channels (no leading hsl()) so Tailwind can compose opacity via `hsl(var(--x) / <alpha>)`.
+ */
+
+:root {
+  /* Base — deep blue-gray */
+  --background: 225 15% 8%;
+  --foreground: 220 15% 90%;
+  --muted: 225 12% 14%;
+  --muted-foreground: 220 10% 60%;
+  --border: 225 15% 18%;
+  --border-strong: 225 15% 28%;
+  --card: 225 15% 10%;
+  --popover: 225 15% 12%;
+  --input: 225 15% 14%;
+
+  /* Accent — indigo-blue / periwinkle (from prototype) */
+  --primary: 238 100% 69%;
+  --primary-foreground: 238 30% 10%;
+  --secondary: 231 100% 76%;
+  --secondary-foreground: 231 30% 10%;
+
+  /* Semantic — cool-toned, non-traffic-light */
+  --positive: 145 50% 60%;
+  --positive-muted: 145 30% 20%;
+  --negative: 355 65% 65%;
+  --negative-muted: 355 35% 22%;
+  --warning: 35 80% 65%;
+  --warning-muted: 35 40% 20%;
+  --info: 210 70% 70%;
+  --info-muted: 210 40% 22%;
+
+  /* Effects */
+  --glow: 231 100% 76%;
+  --ring: 238 100% 69%;
+
+  /* Geometry */
+  --radius: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-xs: 0.375rem;
+}
