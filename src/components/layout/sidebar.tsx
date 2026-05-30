@@ -4,17 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Activity, Newspaper, Radio, Inspect, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
+import { SIDEBAR_NAV } from "@/lib/destinations";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-const NAV = [
-  { href: "/monitor", label: "Monitor", icon: Activity },
-  { href: "/intel", label: "Intel", icon: Newspaper },
-  { href: "/status", label: "Status", icon: Radio },
-  { href: "/inspector", label: "Inspector", icon: Inspect },
-] as const;
 
 export function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
@@ -44,7 +38,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {SIDEBAR_NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           const item = (
             <Link

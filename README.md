@@ -17,6 +17,10 @@ pnpm dev:ws        # Next + mock WS server on :3000 and :8787
 Open http://localhost:3000 and enter the gate password (set via `AUTH_SECRET`
 / `AUTH_PASSWORD` in `.env.local`).
 
+`pnpm dev` and `pnpm dev:ws` run Next with Turbopack enabled. Use
+`pnpm build && pnpm start` when judging production startup or first-screen
+performance; Next dev still compiles routes on first visit.
+
 ## Change the theme
 
 Edit `src/styles/tokens.css`. Every color is a CSS variable, so re-skinning the
@@ -37,6 +41,8 @@ src/
   app/
     (auth)/gate        - password gate
     (main)/            - authenticated routes
+      page.tsx         - portal navigation from destinations.ts
+      amp/             - AMP placeholder route
       monitor/         - realtime metrics
       intel/           - content feed
       status/          - health, alerts, logs
@@ -51,19 +57,26 @@ src/
     layout/            - app shell, sidebar, topbar
     providers/         - app + WS providers
   hooks/               - useChannel, useAnimatedNumber
-  lib/                 - ws-client, format, mock-data, utils, auth
+  lib/                 - destinations, ws-client, format, mock-data, utils, auth
   stores/              - zustand (ui, ws)
   styles/tokens.css    - single-source-of-truth theme
   types/               - shared WS contracts
 scripts/mock-ws-server.ts
 ```
 
+`src/lib/destinations.ts` is the single source of truth for pages shown in the
+portal and sidebar. To add an internal page, add one destination record and
+create the matching route under `src/app/(main)/`. External deployments can be
+registered there with `external: true`; the portal opens them in a new tab and
+they stay out of the sidebar.
+
 ## Example routes
 
 | Route          | Purpose                                   |
 | -------------- | ----------------------------------------- |
 | `/gate`        | Password gate                             |
-| `/`            | Landing / scenario picker                 |
+| `/`            | Portal navigation                         |
+| `/amp`         | AMP task placeholder, pending backend integration |
 | `/monitor`     | Realtime metrics, charts, node table      |
 | `/intel`       | Bento grid feed + Timeline of events      |
 | `/status`      | Pulse, node grid, uptime bars, alerts, logs |
@@ -71,8 +84,8 @@ scripts/mock-ws-server.ts
 
 ## Scripts
 
-- `pnpm dev` — Next dev server only
-- `pnpm dev:ws` — Next + mock WS server
+- `pnpm dev` — Next dev server with Turbopack
+- `pnpm dev:ws` — Next with Turbopack + mock WS server
 - `pnpm build` — production build (standalone)
 - `pnpm typecheck` — `tsc --noEmit`
 

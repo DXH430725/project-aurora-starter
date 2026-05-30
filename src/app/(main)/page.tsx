@@ -1,60 +1,76 @@
 import Link from "next/link";
-import { Activity, Newspaper, Radio, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DESTINATIONS, type DestinationGroup } from "@/lib/destinations";
 
-const SCENES = [
-  {
-    href: "/monitor",
-    title: "Data Monitor",
-    description: "Realtime metric cards, charts, and node tables.",
-    icon: Activity,
-  },
-  {
-    href: "/intel",
-    title: "Intel Feed",
-    description: "Content cards, timelines, and markdown details.",
-    icon: Newspaper,
-  },
-  {
-    href: "/status",
-    title: "System Status",
-    description: "Node health, uptime, logs, and alert triage.",
-    icon: Radio,
-  },
-] as const;
+const GROUPS: { key: DestinationGroup; title: string }[] = [
+  { key: "core", title: "核心" },
+  { key: "ops", title: "运维" },
+  { key: "external", title: "外部部署" },
+];
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-2">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          Project Aurora
+          Aurora
         </p>
-        <h1 className="text-2xl font-medium">A quiet window into your data.</h1>
+        <h1 className="text-2xl font-medium">控制台</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          A dark, Linear-inspired dashboard template. Pick a scenario below to see the
-          primitives in action, or wire it to a real backend via WebSocket.
+          所有已部署页面的统一入口。
         </p>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {SCENES.map(({ href, title, description, icon: Icon }) => (
-          <Link key={href} href={href} className="group">
-            <Card className="h-full transition-[transform,box-shadow,border-color] duration-normal group-hover:-translate-y-0.5 group-hover:border-border-strong group-hover:shadow-sm">
-              <CardHeader className="flex-row items-start justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted">
-                  <Icon className="h-4 w-4 text-primary" />
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-              </CardHeader>
-              <CardContent className="flex flex-col gap-1.5">
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </section>
+      {GROUPS.map((group) => {
+        const items = DESTINATIONS.filter(
+          (destination) => (destination.group ?? "core") === group.key,
+        );
+
+        if (!items.length) return null;
+
+        return (
+          <section key={group.key} className="flex flex-col gap-4">
+            <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
+              {group.title}
+            </h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {items.map(({ href, title, description, icon: Icon, external }) => {
+                const inner = (
+                  <Card className="h-full transition-[transform,box-shadow,border-color] duration-normal group-hover:-translate-y-0.5 group-hover:border-border-strong group-hover:shadow-sm">
+                    <CardHeader className="flex-row items-start justify-between">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-1.5">
+                      <CardTitle>{title}</CardTitle>
+                      <CardDescription>{description}</CardDescription>
+                    </CardContent>
+                  </Card>
+                );
+
+                return external ? (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <Link key={href} href={href} className="group">
+                    {inner}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

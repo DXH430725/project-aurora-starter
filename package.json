@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:ws": "concurrently -k -n next,ws -c cyan,magenta \"next dev\" \"tsx scripts/mock-ws-server.ts\"",
+    "dev": "next dev --turbopack",
+    "dev:ws": "concurrently -k -n next,ws -c cyan,magenta \"next dev --turbopack\" \"tsx scripts/mock-ws-server.ts\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

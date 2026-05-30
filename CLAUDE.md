@@ -38,12 +38,17 @@ new patterns when an existing one fits.
 7. **Three states for every data component**: loading / empty / error. Copy
    the pattern from `MetricCard`.
 
+8. **Register pages in `src/lib/destinations.ts` first.** Do not hardcode
+   navigation links inside the sidebar or portal page.
+
 ## Directory map
 
 ```
 src/
   app/(auth)/gate/        password gate (Suspense-wrapped)
   app/(main)/             authenticated routes
+    page.tsx              portal navigation from src/lib/destinations.ts
+    amp/                  AMP task placeholder
     monitor/              realtime metrics
     intel/                content feed
     status/               health, uptime, logs, alerts
@@ -59,7 +64,7 @@ src/
     layout/               AppShell, Sidebar, TopBar
     providers/            Providers, WSProvider
   hooks/                  useChannel, useChannelValue, useAnimatedNumber
-  lib/                    ws-client, format, mock-data, auth, utils
+  lib/                    destinations, ws-client, format, mock-data, auth, utils
   stores/                 zustand (ui, ws)
   styles/tokens.css       **single source of truth for theme**
   types/ws.ts             WSMessage / WSClientMessage contracts
@@ -74,9 +79,9 @@ scripts/mock-ws-server.ts mock WS broadcaster on :8787
   (currently renders `/public/dxh.png`).
 - **Change the gate password**: set `AUTH_PASSWORD` in `.env.local`.
   `AUTH_SECRET` signs the session JWT — rotate if leaked.
-- **Add a new route**: drop a `page.tsx` under `src/app/(main)/<name>/`.
-  `AppShell` + auth middleware wrap it automatically. Add a nav entry in
-  `src/components/layout/sidebar.tsx`.
+- **Add a new route**: add an entry to `src/lib/destinations.ts`, then drop a
+  `page.tsx` under `src/app/(main)/<name>/`. `AppShell` + auth middleware wrap
+  it automatically; the portal and sidebar read the destination registry.
 - **Add a new chart / card**: follow `RealtimeMetricCard` — thin component
   that reads a channel via `useChannelValue` and hands data to a pure
   presentational component.

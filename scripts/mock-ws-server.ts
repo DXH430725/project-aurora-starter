@@ -60,7 +60,7 @@ function broadcast(channel: string, data: unknown, type: "data" | "error" = "dat
 
 // ------------------- generators -------------------
 
-let prevCpu: Record<string, number> = {};
+const prevCpu: Record<string, number> = {};
 function jitter(prev: number, min: number, max: number, step = 6): number {
   const next = prev + (Math.random() - 0.5) * step;
   return Math.max(min, Math.min(max, next));
