@@ -21,6 +21,15 @@ Open http://localhost:3000 and enter the gate password (set via `AUTH_SECRET`
 `pnpm build && pnpm start` when judging production startup or first-screen
 performance; Next dev still compiles routes on first visit.
 
+For local monitor/status page work without Prometheus:
+
+```bash
+MONITOR_MOCK=1 pnpm dev
+```
+
+Set `PROMETHEUS_URL` and leave `MONITOR_MOCK` empty or `0` to exercise the real
+BFF path. Browser code must not connect to Prometheus directly.
+
 ## Change the theme
 
 Edit `src/styles/tokens.css`. Every color is a CSS variable, so re-skinning the
@@ -40,6 +49,9 @@ entire template takes a few numbers. No component hardcodes color.
 src/
   app/
     (auth)/gate        - password gate
+    api/
+      monitor/         - Prometheus BFF for node metrics
+      status/          - Prometheus BFF for service status
     (main)/            - authenticated routes
       page.tsx         - portal navigation from destinations.ts
       amp/             - AMP placeholder route
@@ -57,7 +69,7 @@ src/
     layout/            - app shell, sidebar, topbar
     providers/         - app + WS providers
   hooks/               - useChannel, useAnimatedNumber
-  lib/                 - destinations, ws-client, format, mock-data, utils, auth
+  lib/                 - destinations, monitor mock/types, ws-client, format, utils, auth
   stores/              - zustand (ui, ws)
   styles/tokens.css    - single-source-of-truth theme
   types/               - shared WS contracts
@@ -88,6 +100,8 @@ they stay out of the sidebar.
 - `pnpm dev:ws` — Next with Turbopack + mock WS server
 - `pnpm build` — production build (standalone)
 - `pnpm typecheck` — `tsc --noEmit`
+
+See `MOCK.md` for monitor/status mock data cases and the mock-to-real switch.
 
 ## Docker
 

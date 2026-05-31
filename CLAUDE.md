@@ -41,6 +41,9 @@ new patterns when an existing one fits.
 8. **Register pages in `src/lib/destinations.ts` first.** Do not hardcode
    navigation links inside the sidebar or portal page.
 
+9. **Never connect frontend code directly to Prometheus.** All monitor/status
+   reads must go through the `/api/monitor` and `/api/status` BFF routes.
+
 ## Directory map
 
 ```

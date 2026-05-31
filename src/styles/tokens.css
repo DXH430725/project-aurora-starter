@@ -31,6 +31,18 @@
   --info: 210 70% 70%;
   --info-muted: 210 40% 22%;
 
+  /* Charts */
+  --chart-1: hsl(var(--primary));
+  --chart-2: hsl(var(--secondary));
+  --chart-3: hsl(var(--positive));
+  --chart-4: hsl(var(--warning));
+  --chart-5: hsl(var(--info));
+  --chart-muted: hsl(var(--muted-foreground));
+  --chart-grid: hsl(var(--border));
+  --chart-tooltip-bg: hsl(var(--popover));
+  --chart-tooltip-border: hsl(var(--border));
+  --chart-tooltip-fg: hsl(var(--foreground));
+
   /* Effects */
   --glow: 231 100% 76%;
   --ring: 238 100% 69%;
