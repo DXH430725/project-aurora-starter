@@ -1,114 +1,100 @@
-# Project Aurora Starter
+# Project Aurora Multi-Zone
 
-Personal frontend template — Next.js 15 + Tailwind + shadcn/ui + a realtime
-WebSocket layer. Dark, quiet, Linear-inspired. Designed to be copied, not
-forked.
+Aurora is now a local-first Next.js multi-zone monorepo:
 
-## Quick start
+- `apps/main` - root portal for `430123.xyz`
+- `apps/status` - monitor and status zone for `status.430123.xyz`
+- `apps/amp` - AMP placeholder zone for `amp.430123.xyz`
+- `packages/ui` - shared components, hooks, stores, monitor BFF helpers, and design tokens
+
+This repository contains the frontend and deployment-ready app structure only.
+Do not run VPS, DNS, Nginx, certbot, or systemd operations from frontend work.
+
+## Quick Start
 
 ```bash
-gh repo create my-new-project --template <your-username>/project-aurora-starter
-cd my-new-project
 pnpm install
-cp .env.example .env.local
-pnpm dev:ws        # Next + mock WS server on :3000 and :8787
+cp .env.local.example .env.local
+pnpm dev:zones
 ```
 
-Open http://localhost:3000 and enter the gate password (set via `AUTH_SECRET`
-/ `AUTH_PASSWORD` in `.env.local`).
+Local ports:
 
-`pnpm dev` and `pnpm dev:ws` run Next with Turbopack enabled. Use
-`pnpm build && pnpm start` when judging production startup or first-screen
-performance; Next dev still compiles routes on first visit.
+| App | URL |
+| --- | --- |
+| Main | `http://localhost:3001` |
+| Status | `http://localhost:3002` |
+| AMP | `http://localhost:3003` |
 
-For local monitor/status page work without Prometheus:
+Use `AUTH_PASSWORD` from `.env.local` for the gate. In local mock mode, set:
 
 ```bash
-MONITOR_MOCK=1 pnpm dev
+MONITOR_MOCK=1
+INTERNAL_STATUS_URL=http://localhost:3002
+INTERNAL_AMP_URL=http://localhost:3003
+STATUS_ZONE_URL=http://localhost:3002
+AMP_ZONE_URL=http://localhost:3003
 ```
 
-Set `PROMETHEUS_URL` and leave `MONITOR_MOCK` empty or `0` to exercise the real
-BFF path. Browser code must not connect to Prometheus directly.
+Then open `http://localhost:3001`. The main app rewrites `/monitor`, `/status`,
+and `/amp` to the status and AMP zones.
 
-## Change the theme
+## Commands
 
-Edit `src/styles/tokens.css`. Every color is a CSS variable, so re-skinning the
-entire template takes a few numbers. No component hardcodes color.
+- `pnpm dev:zones` - run main/status/amp dev servers on 3001/3002/3003
+- `pnpm dev:main` - run only the main zone
+- `pnpm dev:status` - run only the status zone
+- `pnpm dev:amp` - run only the AMP zone
+- `pnpm typecheck` - typecheck all apps
+- `pnpm lint` - lint all apps
+- `pnpm build` - build all apps
 
-## Wire to a real backend
+## Directory Map
 
-1. Point `NEXT_PUBLIC_WS_URL` at your WebSocket endpoint.
-2. Conform to `src/types/ws.ts` (`WSMessage`, `WSClientMessage`), or add an
-   adapter layer that normalizes your server's shape.
-3. Use dot-separated channels: `metrics.cpu.node-01`, `alerts.critical`,
-   `node.health.*`. `useChannel()` supports `*` wildcards.
-
-## Directory structure
-
-```
-src/
-  app/
-    (auth)/gate        - password gate
-    api/
-      monitor/         - Prometheus BFF for node metrics
-      status/          - Prometheus BFF for service status
-    (main)/            - authenticated routes
-      page.tsx         - portal navigation from destinations.ts
-      amp/             - AMP placeholder route
-      monitor/         - realtime metrics
-      intel/           - content feed
-      status/          - health, alerts, logs
-      inspector/       - WS debug panel (dev-only, gated by middleware)
-  components/
-    ui/                - shadcn primitives
-    data/              - metric cards, charts, tables
-    content/           - bento grid, timeline, intel card, markdown
-    status/            - pulse, node grid, uptime, alerts, logs
-    effects/           - glare card, glowing effect, aurora bg
-    inspector/         - channel list, message stream, metrics bar
-    layout/            - app shell, sidebar, topbar
-    providers/         - app + WS providers
-  hooks/               - useChannel, useAnimatedNumber
-  lib/                 - destinations, monitor mock/types, ws-client, format, utils, auth
-  stores/              - zustand (ui, ws)
-  styles/tokens.css    - single-source-of-truth theme
-  types/               - shared WS contracts
-scripts/mock-ws-server.ts
+```text
+apps/
+  main/
+    src/app/(main)/page.tsx              - root portal
+    src/app/api/sidebar-summary/route.ts - status/amp summary aggregator
+    next.config.ts                       - multi-zone rewrites
+  status/
+    src/app/(main)/monitor/page.tsx      - node metrics page
+    src/app/(main)/status/page.tsx       - service status page
+    src/app/api/monitor/                 - Prometheus BFF
+    src/app/api/status/                  - blackbox status BFF
+    src/app/api/summary/route.ts         - public low-sensitive summary
+  amp/
+    src/app/(main)/amp/page.tsx          - AMP placeholder
+    src/app/api/summary/route.ts         - placeholder task summary
+packages/
+  ui/src/components/                     - shared UI and layout
+  ui/src/hooks/                          - shared hooks
+  ui/src/lib/                            - auth, monitor mock/types, Prometheus helpers
+  ui/src/styles/tokens.css               - theme tokens
 ```
 
-`src/lib/destinations.ts` is the single source of truth for pages shown in the
-portal and sidebar. To add an internal page, add one destination record and
-create the matching route under `src/app/(main)/`. External deployments can be
-registered there with `external: true`; the portal opens them in a new tab and
-they stay out of the sidebar.
+## Multi-Zone Notes
 
-## Example routes
+Main zone rewrites:
 
-| Route          | Purpose                                   |
-| -------------- | ----------------------------------------- |
-| `/gate`        | Password gate                             |
-| `/`            | Portal navigation                         |
-| `/amp`         | AMP task placeholder, pending backend integration |
-| `/monitor`     | Realtime metrics, charts, node table      |
-| `/intel`       | Bento grid feed + Timeline of events      |
-| `/status`      | Pulse, node grid, uptime bars, alerts, logs |
-| `/inspector`   | WS message inspector (dev / gated)        |
+- `/monitor/:path*` -> `STATUS_ZONE_URL` or `https://status.430123.xyz`
+- `/status/:path*` -> `STATUS_ZONE_URL` or `https://status.430123.xyz`
+- `/amp/:path*` -> `AMP_ZONE_URL` or `https://amp.430123.xyz`
+- `/status-assets/:path*` -> status zone `_next` assets
+- `/amp-assets/:path*` -> AMP zone `_next` assets
 
-## Scripts
+In production, `apps/status` uses `assetPrefix=/status-assets` and `apps/amp`
+uses `assetPrefix=/amp-assets`, so rewritten pages can hydrate from the main
+domain.
 
-- `pnpm dev` — Next dev server with Turbopack
-- `pnpm dev:ws` — Next with Turbopack + mock WS server
-- `pnpm build` — production build (standalone)
-- `pnpm typecheck` — `tsc --noEmit`
+## Deployment Handoff
 
-See `MOCK.md` for monitor/status mock data cases and the mock-to-real switch.
+The frontend phase stops after code, local validation, commit, and push.
+Operations bot should deploy:
 
-## Docker
+- main on `127.0.0.1:3001`
+- status on `127.0.0.1:3002`
+- amp on `127.0.0.1:3003`
 
-```bash
-docker build -t aurora-starter .
-docker run -p 3000:3000 --env-file .env.local aurora-starter
-```
-
-`docker-compose.yml` and `docker/nginx.conf` are provided as a reference
-deployment with WebSocket upgrade headers.
+Do not touch `api.430123.xyz` or sub2api. See `ROLLBACK.md` for the deployment
+rollback plan and invariants.

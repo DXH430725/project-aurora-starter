@@ -1,164 +1,74 @@
 # Project Aurora — Agent Instructions
 
-You are working inside a copy of the **Project Aurora Starter** — a dark,
-realtime-oriented Next.js 15 + Tailwind + shadcn/ui template. Read this file
-before making changes. The template is opinionated on purpose; do not invent
-new patterns when an existing one fits.
+Aurora is a Next.js multi-zone monorepo. The current zones are:
 
-## Non-negotiable rules
+- `apps/main` - root portal and sidebar summary aggregator
+- `apps/status` - monitor/status pages and Prometheus BFF
+- `apps/amp` - AMP placeholder shell
+- `packages/ui` - shared UI, hooks, stores, auth, monitor helpers, and tokens
 
-1. **Colors go through CSS tokens only.** Every color comes from
-   `src/styles/tokens.css` via Tailwind semantic classes (`bg-card`,
-   `text-primary`, `border-border`, `bg-positive-muted`, …). **No hex, no
-   `text-red-500`, no hardcoded `hsl(...)` in component files.** To re-theme,
-   change tokens.css — nothing else.
+## Non-Negotiable Rules
 
-2. **Never `new WebSocket` in a component or hook.** All WS traffic goes
-   through `WSClient` (singleton) → `WSStore` → `useChannel` /
-   `useChannelValue`. If you need realtime data, call `useChannel(channel,
-   handler)`. Channels use dot-separated names (`metrics.cpu.node-01`) and
-   support `*` wildcards (`node.health.*`).
+1. **Do not touch deployment from frontend tickets.** No SSH, DNS, Nginx,
+   certbot, systemd, VPS commands, or production service changes unless the
+   user explicitly starts the operations phase.
 
-3. **Never call `fetch()` directly from components.** Put server calls behind
-   a React Query hook or a route handler. Auth is the only exception
-   (`/gate` → `/api/auth`).
+2. **Never touch sub2api or `api.430123.xyz`.** This repository may link to it
+   from the portal, but code changes must not modify its process, ports,
+   reverse proxy, config, DNS, or runtime assumptions.
 
-4. **No `: any`.** If a type is hard, carve out an `interface` next to where
-   it's used. WS payloads get generics: `useChannel<MyShape>(...)`.
+3. **Colors go through tokens only.** Theme variables live in
+   `packages/ui/src/styles/tokens.css`. Component files must use semantic
+   Tailwind classes or existing CSS variables, not raw hex colors.
 
-5. **Visual restraint (Plan §2.5).** No drop shadows (except the gate card).
-   Hover transforms ≤ 2px. One hover style per page. Data is the focus —
-   decoration is not. `GlowingEffect` is **event-triggered only** (critical
-   alerts, etc.), never ambient. Do not mix `GlareCard` and
-   `CardSpotlight` on the same page.
+4. **Frontend must not connect directly to Prometheus.** Monitor/status reads
+   go through `apps/status/src/app/api/monitor` and
+   `apps/status/src/app/api/status`.
 
-6. **Numbers in the UI use `font-mono tabular-nums`.** Transitions default
-   to `200ms ease-out` (see Tailwind `duration-normal`).
+5. **Register navigation in the app-local destination registry.** Main app
+   destinations live in `apps/main/src/lib/destinations.ts`; child zones keep
+   their own minimal sidebar destinations under their app `src/lib`.
 
-7. **Three states for every data component**: loading / empty / error. Copy
-   the pattern from `MetricCard`.
+6. **No new WebSocket realtime behavior.** Sidebar summary uses BFF polling.
+   Existing WS helpers remain in `packages/ui` only for legacy components.
 
-8. **Register pages in `src/lib/destinations.ts` first.** Do not hardcode
-   navigation links inside the sidebar or portal page.
+7. **No `: any`.** Use explicit interfaces and `unknown` with narrowing.
 
-9. **Never connect frontend code directly to Prometheus.** All monitor/status
-   reads must go through the `/api/monitor` and `/api/status` BFF routes.
+8. **Three states for monitor/status data components:** loading, empty, error.
+   BFF 502 must show the whole-page “监控数据源不可达” error state.
 
-## Directory map
+## Where To Touch
 
-```
-src/
-  app/(auth)/gate/        password gate (Suspense-wrapped)
-  app/(main)/             authenticated routes
-    page.tsx              portal navigation from src/lib/destinations.ts
-    amp/                  AMP task placeholder
-    monitor/              realtime metrics
-    intel/                content feed
-    status/               health, uptime, logs, alerts
-    inspector/            WS debug (dev-gated by middleware)
-  components/
-    ui/                   shadcn primitives (button, input, select, popover, …)
-    data/                 MetricCard, RealtimeChart, DataTable, …
-    content/              BentoGrid, Timeline, IntelCard, TagList, Markdown
-    status/               PulseIndicator, NodeHealthGrid, UptimeBar,
-                          AlertList, LogViewer
-    effects/              GlareCard, GlowingEffect, AuroraBackground
-    inspector/            MetricsBar, ChannelList, MessageStream
-    layout/               AppShell, Sidebar, TopBar
-    providers/            Providers, WSProvider
-  hooks/                  useChannel, useChannelValue, useAnimatedNumber
-  lib/                    destinations, ws-client, format, mock-data, auth, utils
-  stores/                 zustand (ui, ws)
-  styles/tokens.css       **single source of truth for theme**
-  types/ws.ts             WSMessage / WSClientMessage contracts
-scripts/mock-ws-server.ts mock WS broadcaster on :8787
-```
+- Main portal cards/sidebar: `apps/main/src/lib/destinations.ts` and
+  `apps/main/src/app/(main)/page.tsx`
+- Main summary aggregation: `apps/main/src/app/api/sidebar-summary/route.ts`
+- Monitor/status UI: `apps/status/src/app/(main)/monitor/page.tsx` and
+  `apps/status/src/app/(main)/status/page.tsx`
+- Prometheus BFF: `apps/status/src/app/api/monitor`,
+  `apps/status/src/app/api/status`, and shared helpers in `packages/ui/src/lib`
+- AMP placeholder: `apps/amp/src/app/(main)/amp/page.tsx`
+- Shared layout/components/tokens: `packages/ui/src`
 
-## Common tasks — where to touch
+## Verification
 
-- **Re-skin the whole app**: edit `src/styles/tokens.css` only.
-- **Change the browser title / favicon**: `src/app/layout.tsx` → `metadata`.
-- **Change the internal logo**: `src/components/layout/sidebar.tsx`
-  (currently renders `/public/dxh.png`).
-- **Change the gate password**: set `AUTH_PASSWORD` in `.env.local`.
-  `AUTH_SECRET` signs the session JWT — rotate if leaked.
-- **Add a new route**: add an entry to `src/lib/destinations.ts`, then drop a
-  `page.tsx` under `src/app/(main)/<name>/`. `AppShell` + auth middleware wrap
-  it automatically; the portal and sidebar read the destination registry.
-- **Add a new chart / card**: follow `RealtimeMetricCard` — thin component
-  that reads a channel via `useChannelValue` and hands data to a pure
-  presentational component.
-
-## Wiring to a real backend
-
-1. Point `NEXT_PUBLIC_WS_URL` at your WS endpoint.
-2. Conform to `src/types/ws.ts`:
-   ```ts
-   { channel: string, type: "data" | "ack" | "error" | "ping" | "pong",
-     timestamp: number, data?: T, error?: { code, message } }
-   ```
-3. Client→server: `{ type: "subscribe" | "unsubscribe" | "ping", channel }`.
-4. If your server's shape differs, add an **adapter** in `src/lib/` — do
-   not widen the shared types.
-5. Drop `scripts/mock-ws-server.ts` from `pnpm dev:ws` once you're live
-   against the real backend.
-
-## Deployment: sub-path under another site (reverse proxy)
-
-This template is designed to be mounted as a sub-path of a main site (e.g.
-`https://main.example.com/aurora/…`) while running on a separate host.
-
-**Build-time toggle:**
+Run before marking frontend work complete:
 
 ```bash
-BASE_PATH=/aurora BUILD_STANDALONE=1 pnpm build
+pnpm typecheck
+pnpm lint
+pnpm build
 ```
 
-- `BASE_PATH` sets Next's `basePath` + `assetPrefix` and scopes the auth
-  cookie to that path (`src/app/api/auth/route.ts`). All internal links
-  (`Link href="/intel"`) automatically become `/aurora/intel`.
-- `BUILD_STANDALONE=1` produces `.next/standalone` for Docker.
-
-**Main site nginx** (separate host from Aurora):
-
-```nginx
-location /aurora/ {
-    proxy_pass http://aurora-host:3000/aurora/;   # keep the prefix
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-
-    # WebSocket upgrade
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_read_timeout 3600s;
-}
-```
-
-The trailing `/aurora/` on both sides keeps the prefix intact — Next was
-built expecting to see it. If you `proxy_pass http://backend/;` (no
-trailing prefix), Next will 404 on its own assets.
-
-**WebSocket through the same proxy:** set
-`NEXT_PUBLIC_WS_URL=wss://main.example.com/aurora/ws` and add a matching
-nginx location that proxies to your WS service with the same upgrade
-headers.
-
-**Auth sits on the main domain** — same origin, same cookie, no CORS, no
-`SameSite=None` gymnastics.
-
-## Pre-flight checklist before marking work done
+For local multi-zone verification:
 
 ```bash
-pnpm tsc --noEmit                                     # 0 errors
-pnpm build                                            # 0 errors
-grep -rn '#[0-9a-fA-F]\{3,6\}' src/components src/app # empty
-grep -rn 'new WebSocket' src/components src/hooks     # empty
-grep -rn ': any' src --include='*.ts' --include='*.tsx' \
-   | grep -v node_modules | grep -v '.d.ts'           # empty
-grep -rn 'fetch(' src/components                      # empty
+MONITOR_MOCK=1 pnpm dev:zones
 ```
 
-If any of these come back non-empty, fix before handing off.
+Use local URLs:
+
+- Main: `http://localhost:3001`
+- Status: `http://localhost:3002`
+- AMP: `http://localhost:3003`
+
+The main app should rewrite `/monitor`, `/status`, and `/amp` to child zones.

@@ -151,6 +151,14 @@ importers:
         specifier: ^8.18.0
         version: 8.20.0
 
+  apps/amp: {}
+
+  apps/main: {}
+
+  apps/status: {}
+
+  packages/ui: {}
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
