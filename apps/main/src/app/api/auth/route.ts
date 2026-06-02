@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { signAuthToken, AUTH_COOKIE } from "@/lib/auth";
+import {
+  signAuthToken,
+  AUTH_COOKIE,
+  getAuthCookieClearOptions,
+  getAuthCookieOptions,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -22,18 +27,12 @@ export async function POST(req: NextRequest) {
 
   const token = await signAuthToken();
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(AUTH_COOKIE.name, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: process.env.BASE_PATH || "/",
-    maxAge: AUTH_COOKIE.maxAge,
-  });
+  res.cookies.set(AUTH_COOKIE.name, token, getAuthCookieOptions());
   return res;
 }
 
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.delete(AUTH_COOKIE.name);
+  res.cookies.set(AUTH_COOKIE.name, "", getAuthCookieClearOptions());
   return res;
 }

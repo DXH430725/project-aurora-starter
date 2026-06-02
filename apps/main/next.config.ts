@@ -13,16 +13,12 @@ const nextConfig: NextConfig = {
     // Expose to runtime so auth cookie can be scoped correctly.
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
-  async rewrites() {
-    return {
-      beforeFiles: [
-        { source: "/monitor/:path*", destination: `${statusZone}/monitor/:path*` },
-        { source: "/status/:path*", destination: `${statusZone}/status/:path*` },
-        { source: "/amp/:path*", destination: `${ampZone}/amp/:path*` },
-        { source: "/status-assets/:path*", destination: `${statusZone}/_next/:path*` },
-        { source: "/amp-assets/:path*", destination: `${ampZone}/_next/:path*` },
-      ],
-    };
+  async redirects() {
+    return [
+      { source: "/monitor/:path*", destination: `${statusZone}/monitor/:path*`, permanent: false },
+      { source: "/status/:path*", destination: `${statusZone}/status/:path*`, permanent: false },
+      { source: "/amp/:path*", destination: `${ampZone}/amp/:path*`, permanent: false },
+    ];
   },
 };
 

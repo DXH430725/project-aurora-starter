@@ -33,3 +33,21 @@ export const AUTH_COOKIE = {
   name: COOKIE_NAME,
   maxAge: COOKIE_MAX_AGE,
 } as const;
+
+export function getAuthCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: process.env.BASE_PATH || "/",
+    maxAge: AUTH_COOKIE.maxAge,
+    domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
+  };
+}
+
+export function getAuthCookieClearOptions() {
+  return {
+    ...getAuthCookieOptions(),
+    maxAge: 0,
+  };
+}

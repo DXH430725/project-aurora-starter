@@ -76,3 +76,30 @@ sudo systemctl status nginx --no-pager
 
 Seven days after successful rollout, the user may approve a separate cleanup
 ticket for old `/opt/aurora` and port `3000`.
+
+## Batch 11 - Aurora Auth/Nav/AMP Overview Patch
+
+This batch changes frontend code and app env only:
+
+- shared auth cookie options now support `AUTH_COOKIE_DOMAIN`
+- status/amp sidebars use absolute cross-zone links for routes they do not own
+- AMP zone reads the colocated AMP API through `AMP_API_INTERNAL_URL`
+
+Rollback:
+
+```bash
+cd /opt/aurora-multizone
+git checkout 454945af53c1107127f1f9f838d8c22881b4fcf0 -- .
+pnpm install --frozen-lockfile
+pnpm --filter @aurora/main build
+sudo systemctl restart aurora-main
+pnpm --filter @aurora/status build
+sudo systemctl restart aurora-status
+pnpm --filter @aurora/amp build
+sudo systemctl restart aurora-amp
+```
+
+If cross-zone auth must be disabled without rolling back code, remove
+`AUTH_COOKIE_DOMAIN` from all three `.env.production.local` files and restart
+the three Aurora services. Do not print or rotate `AUTH_SECRET` unless the user
+explicitly approves secret rotation.

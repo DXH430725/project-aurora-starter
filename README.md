@@ -4,7 +4,7 @@ Aurora is now a local-first Next.js multi-zone monorepo:
 
 - `apps/main` - root portal for `430123.xyz`
 - `apps/status` - monitor and status zone for `status.430123.xyz`
-- `apps/amp` - AMP placeholder zone for `amp.430123.xyz`
+- `apps/amp` - AMP read-only task overview zone for `amp.430123.xyz`
 - `packages/ui` - shared components, hooks, stores, monitor BFF helpers, and design tokens
 
 This repository contains the frontend and deployment-ready app structure only.
@@ -34,10 +34,11 @@ INTERNAL_STATUS_URL=http://localhost:3002
 INTERNAL_AMP_URL=http://localhost:3003
 STATUS_ZONE_URL=http://localhost:3002
 AMP_ZONE_URL=http://localhost:3003
+AMP_API_INTERNAL_URL=http://127.0.0.1:8000
 ```
 
-Then open `http://localhost:3001`. The main app rewrites `/monitor`, `/status`,
-and `/amp` to the status and AMP zones.
+Then open `http://localhost:3001`. The main app links to the status and AMP
+zones as separate subdomain pages.
 
 ## Commands
 
@@ -64,8 +65,9 @@ apps/
     src/app/api/status/                  - blackbox status BFF
     src/app/api/summary/route.ts         - public low-sensitive summary
   amp/
-    src/app/(main)/amp/page.tsx          - AMP placeholder
-    src/app/api/summary/route.ts         - placeholder task summary
+    src/app/(main)/amp/page.tsx          - AMP read-only task overview
+    src/app/api/tasks/route.ts           - AMP task/metrics/recent-runs BFF
+    src/app/api/summary/route.ts         - AMP task summary
 packages/
   ui/src/components/                     - shared UI and layout
   ui/src/hooks/                          - shared hooks
@@ -73,19 +75,21 @@ packages/
   ui/src/styles/tokens.css               - theme tokens
 ```
 
-## Multi-Zone Notes
+## Zone Routing Notes
 
-Main zone rewrites:
+Main zone redirects old root-domain child paths to their owning subdomains:
 
 - `/monitor/:path*` -> `STATUS_ZONE_URL` or `https://status.430123.xyz`
 - `/status/:path*` -> `STATUS_ZONE_URL` or `https://status.430123.xyz`
 - `/amp/:path*` -> `AMP_ZONE_URL` or `https://amp.430123.xyz`
-- `/status-assets/:path*` -> status zone `_next` assets
-- `/amp-assets/:path*` -> AMP zone `_next` assets
 
-In production, `apps/status` uses `assetPrefix=/status-assets` and `apps/amp`
-uses `assetPrefix=/amp-assets`, so rewritten pages can hydrate from the main
-domain.
+The root domain is a portal and summary surface only. It does not render child
+zone pages through rewrites because mixed-domain Next.js assets and middleware
+are too brittle for the current deployment.
+
+For cross-zone auth in production, set the same `AUTH_SECRET` in all three
+apps and set `AUTH_COOKIE_DOMAIN=.430123.xyz`. The AMP zone also needs
+`AMP_API_INTERNAL_URL=http://127.0.0.1:8000` to read the colocated AMP API.
 
 ## Deployment Handoff
 

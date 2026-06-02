@@ -7,10 +7,10 @@ import { useSidebarSummary } from "@/app/hooks/use-sidebar-summary";
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const summary = useSidebarSummary();
   const navItems = SIDEBAR_NAV.map((item) => {
-    if (item.href === "/monitor" || item.href === "/status") {
+    if (item.label === "Monitor" || item.label === "Status") {
       return { ...item, badge: summary?.status.badge ?? "..." };
     }
-    if (item.href === "/amp") return { ...item, badge: summary?.amp.badge ?? "..." };
+    if (item.label === "AMP") return { ...item, badge: summary?.amp.badge ?? "..." };
     return item;
   });
 

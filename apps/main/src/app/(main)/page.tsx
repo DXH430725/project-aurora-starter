@@ -60,6 +60,10 @@ export default function HomePage() {
                   >
                     {inner}
                   </a>
+                ) : href.startsWith("https://") ? (
+                  <a key={href} href={href} className="group">
+                    {inner}
+                  </a>
                 ) : (
                   <Link key={href} href={href} className="group">
                     {inner}

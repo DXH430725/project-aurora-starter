@@ -9,6 +9,7 @@ interface StatusSummary {
 interface AmpSummary {
   tasks_total?: number;
   tasks_failed?: number;
+  failed_runs?: number;
   placeholder?: boolean;
 }
 
@@ -40,7 +41,12 @@ export async function GET() {
     },
     amp: {
       state: amp.status === "fulfilled" ? "ok" : "unreachable",
-      badge: amp.status === "fulfilled" ? `${amp.value.tasks_failed ?? 0}x` : "offline",
+      badge:
+        amp.status === "fulfilled"
+          ? amp.value.tasks_failed
+            ? `${amp.value.tasks_failed ?? 0}x`
+            : `${amp.value.tasks_total ?? 0}t`
+          : "offline",
     },
   });
 }
