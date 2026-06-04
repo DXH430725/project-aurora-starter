@@ -9,6 +9,7 @@ import type {
 const MONITOR_ERROR = "监控数据源不可达";
 const STATUS_OK_THRESHOLD = 0.95;
 const PROMETHEUS_TIMEOUT_MS = 5_000;
+const RANGE_MAX_POINTS = 144;
 
 export const MONITOR_QUERIES = {
   cpu: '100 - (avg by (instance, region) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)',
@@ -17,11 +18,12 @@ export const MONITOR_QUERIES = {
     '(1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"})) * 100',
   netRx: 'rate(node_network_receive_bytes_total{device!~"lo|docker.*|veth.*"}[5m])',
   netTx: 'rate(node_network_transmit_bytes_total{device!~"lo|docker.*|veth.*"}[5m])',
-  up: 'up{job="node"}',
+  up: `up{job="${process.env.PROMETHEUS_NODE_JOB || "node_exporter"}"}`,
 } satisfies Record<MonitorMetric | "up", string>;
 
-const STATUS_CURRENT_QUERY = 'probe_success{job="blackbox"}';
-const STATUS_RANGE_QUERY = 'avg_over_time(probe_success{job="blackbox"}[1d])';
+const STATUS_JOB = process.env.PROMETHEUS_BLACKBOX_JOB || "blackbox_http_2xx";
+const STATUS_CURRENT_QUERY = `probe_success{job="${STATUS_JOB}"}`;
+const STATUS_RANGE_QUERY = `avg_over_time(probe_success{job="${STATUS_JOB}"}[1d])`;
 
 interface PrometheusVectorResult {
   metric: Record<string, string>;
@@ -152,7 +154,7 @@ export async function fetchMonitorRangeFromPrometheus(
 ): Promise<MonitorRangeResponse> {
   const end = Math.floor(Date.now() / 1000);
   const start = end - minutes * 60;
-  const stepSec = minutes <= 60 ? 30 : 60;
+  const stepSec = Math.max(30, Math.ceil((minutes * 60) / RANGE_MAX_POINTS));
   const result = await prometheusGet<PrometheusMatrixResult>("/api/v1/query_range", {
     query: MONITOR_QUERIES[metric],
     start: String(start),

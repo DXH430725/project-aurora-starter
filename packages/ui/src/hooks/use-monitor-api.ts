@@ -16,6 +16,7 @@ interface QueryState<T> {
 }
 
 const SOURCE_ERROR = "监控数据源不可达";
+const MONITOR_RANGE_MINUTES = 12 * 60;
 
 async function readJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal, cache: "no-store" });
@@ -84,10 +85,10 @@ export function useMonitorSnapshot() {
   return usePollingResource<MonitorSnapshotResponse>("/api/monitor", 15_000);
 }
 
-export function useMonitorRange(metric: MonitorMetric, minutes = 60) {
+export function useMonitorRange(metric: MonitorMetric, minutes = MONITOR_RANGE_MINUTES) {
   return usePollingResource<MonitorRangeResponse>(
     `/api/monitor/range?metric=${metric}&minutes=${minutes}`,
-    15_000,
+    60_000,
   );
 }
 
